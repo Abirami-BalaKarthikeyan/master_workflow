@@ -11,7 +11,7 @@ import {
   BackgroundVariant
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Mail, Bot, FileText, Send, X, Workflow, Activity, Settings, Sparkles, Loader2, Key, Copy, Check } from 'lucide-react';
+import { Mail, Bot, FileText, Send, X, Workflow, Activity, Settings, Sparkles, Loader2, Key, Copy, Check, Plus, Mic, ArrowUp } from 'lucide-react';
 import './index.css';
 
 const defaultNodes = [];
@@ -41,8 +41,8 @@ const CustomNode = ({ data, type, selected }) => {
           {getIconForLabel(data.label || data.type)}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-sm text-white mb-0.5 truncate">{data.label || data.type}</div>
-          <div className="text-xs text-gray-400 truncate">{data.description || data.type}</div>
+          <div className="font-semibold text-sm text-white mb-0.5 whitespace-pre-wrap break-all">{data.label || data.type}</div>
+          <div className="text-xs text-gray-400 whitespace-pre-wrap break-all">{data.description || data.type}</div>
         </div>
       </div>
       {type !== 'output' && <Handle type="source" position={Position.Right} />}
@@ -134,7 +134,8 @@ export default function App() {
 
   const checkExecutionStatus = async (executionId, token) => {
     try {
-      const res = await fetch(`/api/workflow-executions/${executionId}/status`, {
+      const baseUrl = import.meta.env.VITE_BASE_URL || "";
+      const res = await fetch(`${baseUrl}/api/workflow-executions/${executionId}/status`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`
@@ -142,7 +143,6 @@ export default function App() {
       });
 
       const payload = await res.json().catch(() => null);
-      console.log("Polling Status:", payload);
 
       const status = payload?.data?.status || payload?.status;
 
@@ -178,7 +178,8 @@ export default function App() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/webhooks/trigger/113", {
+      const baseUrl = import.meta.env.VITE_BASE_URL || "";
+      const response = await fetch(`${baseUrl}/api/webhooks/trigger/113`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -225,32 +226,40 @@ export default function App() {
             </div>
           </div>
 
-          <textarea
-            value={promptInput}
-            onChange={(e) => setPromptInput(e.target.value)}
-            disabled={isLoading}
-            placeholder="E.g., Fetch latest emails from Gmail, summarize them with AI, and send to Slack..."
-            className="w-full bg-black/40 border border-[#2e323b] rounded-xl p-4 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none h-32 mb-6"
-            required
-          />
-
-          <button
-            type="submit"
-            disabled={isLoading || !promptInput.trim()}
-            className="w-full bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700 text-white font-semibold py-3.5 px-6 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(99,102,241,0.3)]"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 size={18} className="animate-spin" />
-                Generating Workflow...
-              </>
-            ) : (
-              <>
-                <Sparkles size={18} />
-                Generate Workflow
-              </>
-            )}
-          </button>
+          <div className="relative bg-[#111319]/80 border border-[#2e323b] rounded-[28px] flex items-end p-2.5 shadow-xl transition-all focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 mb-6">
+            <textarea
+              value={promptInput}
+              onChange={(e) => {
+                setPromptInput(e.target.value);
+                e.target.style.height = 'auto';
+                e.target.style.height = `${Math.min(Math.max(e.target.scrollHeight, 60), 240)}px`;
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (promptInput.trim() && !isLoading) {
+                    handleGenerateWorkflow({ preventDefault: () => { } });
+                  }
+                }
+              }}
+              disabled={isLoading}
+              placeholder="Describe your workflow..."
+              className="flex-1 bg-transparent border-none outline-none pl-4 pr-3 py-3 text-[15px] leading-relaxed text-white placeholder-gray-500 resize-none custom-scrollbar"
+              style={{ minHeight: '60px', height: '60px' }}
+              required
+            />
+            <button
+              type="submit"
+              disabled={isLoading || !promptInput.trim()}
+              className="bg-white hover:bg-gray-200 text-black font-semibold p-2.5 rounded-full flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 mb-0.5 ml-2"
+            >
+              {isLoading ? (
+                <Loader2 size={20} className="animate-spin text-black" />
+              ) : (
+                <ArrowUp size={20} className="text-black" />
+              )}
+            </button>
+          </div>
         </form>
       </div>
     );
@@ -267,54 +276,58 @@ export default function App() {
           </div>
 
           {/* Redefine Prompt Box */}
-          <form onSubmit={handleGenerateWorkflow} className="flex-1 max-w-4xl bg-[#1a1d24]/90 backdrop-blur-xl border border-[#2e323b] rounded-xl flex items-center p-1.5 shadow-lg transition-all focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
-            <div className="pl-3 pr-2 text-indigo-400">
-              <Sparkles size={18} />
-            </div>
-            <input
-              type="text"
+          <form onSubmit={handleGenerateWorkflow} className="flex-1 max-w-4xl bg-[#1a1d24]/90 backdrop-blur-xl border border-[#2e323b] rounded-[28px] flex items-end p-2.5 shadow-lg transition-all focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
+            <textarea
               value={promptInput}
-              onChange={(e) => setPromptInput(e.target.value)}
+              onChange={(e) => {
+                setPromptInput(e.target.value);
+                e.target.style.height = 'auto';
+                e.target.style.height = `${Math.min(Math.max(e.target.scrollHeight, 60), 240)}px`;
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (promptInput.trim() && !isLoading) {
+                    handleGenerateWorkflow({ preventDefault: () => { } });
+                  }
+                }
+              }}
               disabled={isLoading}
-              className="flex-1 bg-transparent border-none outline-none text-sm text-white px-2 placeholder-gray-500 h-9"
-              placeholder="Refine prompt (e.g., add a condition to only summarize invoices)..."
+              rows={1}
+              className="flex-1 bg-transparent border-none outline-none text-[15px] leading-relaxed text-white pl-4 pr-3 py-3 resize-none custom-scrollbar"
+              style={{ minHeight: '60px', height: '60px' }}
+              placeholder="Refine prompt..."
             />
             <button
               type="submit"
               disabled={isLoading || !promptInput.trim()}
-              className="bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold px-5 py-2 rounded-lg flex items-center gap-2 transition-colors ml-2 shadow-[0_0_15px_rgba(99,102,241,0.2)] whitespace-nowrap"
+              className="bg-white hover:bg-gray-200 text-black disabled:opacity-50 disabled:cursor-not-allowed p-2.5 rounded-full flex items-center justify-center transition-all mb-0.5 flex-shrink-0 ml-2"
             >
               {isLoading ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" />
-                  Updating...
-                </>
+                <Loader2 size={18} className="animate-spin text-black" />
               ) : (
-                "Update Workflow"
+                <ArrowUp size={18} className="text-black" />
               )}
             </button>
           </form>
 
-          {/* Spacer for visual balance on the right */}
-          <div className="hidden md:flex w-24 shrink-0"></div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="absolute top-16 left-0 right-0 flex justify-center z-10 pointer-events-none mt-2">
-        <div className="bg-[#1a1d24]/90 backdrop-blur-md p-1 rounded-lg border border-[#2e323b] flex gap-1 pointer-events-auto shadow-lg">
-          <button
-            onClick={() => setActiveTab('workflow')}
-            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === 'workflow' ? 'bg-indigo-500 text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-          >
-            Workflow
-          </button>
-          <button
-            onClick={() => setActiveTab('json')}
-            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === 'json' ? 'bg-indigo-500 text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-          >
-            JSON Raw
-          </button>
+          {/* Tabs on the Right */}
+          <div className="hidden md:flex shrink-0 items-center">
+            <div className="bg-[#1a1d24]/90 backdrop-blur-md p-1 rounded-lg border border-[#2e323b] flex gap-1 shadow-lg">
+              <button
+                onClick={() => setActiveTab('workflow')}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === 'workflow' ? 'bg-indigo-500 text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              >
+                Workflow
+              </button>
+              <button
+                onClick={() => setActiveTab('json')}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === 'json' ? 'bg-indigo-500 text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              >
+                JSON Raw
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -407,11 +420,11 @@ export default function App() {
                 <FileText size={16} className="text-gray-400" />
                 <span className="text-sm font-medium text-gray-300">workflow_definition.json</span>
               </div>
-              <button 
+              <button
                 onClick={handleCopyJson}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#1a1d24] border border-[#2e323b] hover:border-gray-500 rounded-md text-xs font-medium text-gray-400 hover:text-white transition-all hover:shadow-md"
               >
-                {copied ? <Check size={14} className="text-green-400"/> : <Copy size={14} />}
+                {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
                 {copied ? "Copied!" : "Copy JSON"}
               </button>
             </div>
