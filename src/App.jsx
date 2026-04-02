@@ -179,7 +179,8 @@ export default function App() {
 
     try {
       const baseUrl = import.meta.env.VITE_BASE_URL || "";
-      const response = await fetch(`${baseUrl}/api/webhooks/trigger/113`, {
+      const workflowId = import.meta.env.VITE_WORKFLOW_ID || "113";
+      const response = await fetch(`${baseUrl}/api/webhooks/trigger/${workflowId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
