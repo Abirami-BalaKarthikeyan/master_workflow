@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-500: #6366f1;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  @apply bg-[#0f1115] text-white overflow-hidden h-screen w-screen m-0 p-0;
+}
+
+#root {
+  @apply h-full w-full flex;
+}
+
+.react-flow__bg {
+  background-color: #0f1115;
+}
+
+.react-flow__handle {
+  width: 12px;
+  height: 12px;
+  background-color: #9ca3af;
+  border: 2px solid #1a1d24;
+  transition: all 0.2s ease;
+}
+
+.react-flow__handle:hover {
+  background-color: #6366f1;
+  transform: scale(1.2);
+}
