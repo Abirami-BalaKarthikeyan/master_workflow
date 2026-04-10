@@ -55,14 +55,24 @@ const parseDynamicWorkflow = (outputs) => {
   // Find the result that contains our workflow JSON string
   let workflowArray = null;
   for (const key in outputs) {
-    if (outputs[key]?.result) {
+    const output = outputs[key];
+    const contentToParse = output?.result || output?.llm_response || output?.raw_response || output?.extraction_result || output?.extracted_data;
+
+    if (contentToParse) {
       try {
-        const parsed = typeof outputs[key].result === 'string' ? JSON.parse(outputs[key].result) : outputs[key].result;
+        let parsed = typeof contentToParse === 'string' ? JSON.parse(contentToParse.replace(/```json\n?|\n?```/g, '').trim()) : contentToParse;
+        
+        // If it's still a string after first parse (double encoded), parse again
+        if (typeof parsed === 'string') {
+          parsed = JSON.parse(parsed.replace(/```json\n?|\n?```/g, '').trim());
+        }
+
         if (parsed.workflow && Array.isArray(parsed.workflow)) {
           workflowArray = parsed.workflow;
           break;
         }
       } catch (e) {
+        console.error("Error parsing output section:", key, e);
         // Continue searching
       }
     }
